@@ -28,6 +28,7 @@
 
 # CMake Output (build directories)
 cmake-build-debug
+build
 
 # Eclipse
 .cproject

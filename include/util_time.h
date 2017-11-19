@@ -21,14 +21,14 @@ public:
     Time& SetNow();
 
     // Components
-    int Year()   const { MakeReady(); return time.tm_year + 1900;}
-    int Month()  const { MakeReady(); return time.tm_mon + 1;}
-    int MDay()   const { MakeReady(); return time.tm_mday;}
-    int Hour()   const { MakeReady(); return time.tm_hour;}
-    int Minute() const { MakeReady(); return time.tm_min;}
-    int Second() const { MakeReady(); return time.tm_sec;}
-    int MSec()   const { return tv.tv_usec / 1000;}
-    int USec()   const { return tv.tv_usec;}
+    int Year()   const { MakeReady(); return data.tm_year + 1900;}
+    int Month()  const { MakeReady(); return data.tm_mon + 1;}
+    int MDay()   const { MakeReady(); return data.tm_mday;}
+    int Hour()   const { MakeReady(); return data.tm_hour;}
+    int Minute() const { MakeReady(); return data.tm_min;}
+    int Second() const { MakeReady(); return data.tm_sec;}
+    int MSec()   const { return TV().tv_usec / 1000;}
+    int USec()   const { return TV().tv_usec;}
 
     // Diffs: Time since rhs: (this - rhs)
     int  DiffSecs (const Time& rhs) const;
@@ -67,12 +67,26 @@ private:
 
     void InitialiseBlank();
 
+    inline const timeval& TV() const { return tv; }
+    inline timeval& TV() { return tv; }
+
+    void SetTM(const tm& time) const;
+
     /**
      *  Data
-     */ 
-    struct timeval tv;
-    mutable struct tm time;
-    bool   ready;
+     */
+    struct TMLight {
+        int8_t ready;			// ready flag
+        int8_t tm_sec;			/* Seconds.	[0-60] (1 leap second) */
+        int8_t tm_min;			/* Minutes.	[0-59] */
+        int8_t tm_hour;			/* Hours.	[0-23] */
+        int8_t tm_mday;			/* Day.		[1-31] */
+        int8_t tm_mon;			/* Month.	[0-11] */
+        int16_t tm_year;		/* Year	- 1900.  */
+    };
+
+    timeval tv;
+    mutable TMLight data;
 };
 
 #endif
