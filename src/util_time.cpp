@@ -7,8 +7,9 @@
 
 
 using namespace std;
+using namespace nstimestamp;
 
-const char* Time::EpochTimestamp =  "19700101 00:00:00.000000";
+const char* Time::EpochTimestamp =  "19700101 00:00:00.000000000";
 
 namespace {
     const time_t& get_epoch() {
@@ -36,8 +37,7 @@ namespace {
 }
 
 Time::Time() {
-    gettimeofday(&tv, NULL);
-    data.ready = false;
+    SetNow();
 }
 
 Time::Time(const Time& rhs) {
@@ -56,25 +56,15 @@ Time::Time(const struct timeval& tv) {
     (*this) = tv;
 }
 
-Time::Time(const long& usecs) {
-    (*this) = usecs;
-}
-
 Time& Time::operator=(const struct timeval& tv) {
-    this->TV() = tv;
-    data.ready = false;
-    return *this;
-}
-
-Time& Time::operator=(const long& usecs ) {
-    this->TV().tv_usec = usecs%1000000L;
-    this->TV().tv_sec = usecs / 1000000L;
+    ts.tv_sec = tv.tv_sec;
+    ts.tv_nsec = tv.tv_usec * 1000;
     data.ready = false;
     return *this;
 }
 
 Time& Time::operator=(const Time& rhs) {
-    this->TV() = rhs.TV();
+    this->ts = rhs.ts;
     data.ready = false;
     return *this;
 }
@@ -101,13 +91,13 @@ void Time::InitialiseFromString(const char* str, size_t len) {
         strncpy(buf,str,27);
         buf[27] = 0;
 
-        if ( len >= 27 && buf[4] == '-' )
+        if ( len >= 5 && buf[4] == '-' )
         {
             InitialiseFromISOTimestamp(buf);
         }
         else
         {
-            InitialiseFromTimestamp(buf);
+            InitialiseFromTimestamp(buf, len);
         }
     }
     else
@@ -118,7 +108,7 @@ void Time::InitialiseFromString(const char* str, size_t len) {
     data.ready = true;
 }
 
-void Time::InitialiseFromTimestamp(char* buf)
+void Time::InitialiseFromTimestamp(char* buf, const size_t len)
 {
     /*
      * Initialise the TM() to Midnight on the 1st of January 1970
@@ -140,8 +130,8 @@ void Time::InitialiseFromTimestamp(char* buf)
     /*
      * Pull apart the string
      * ---------------------
-     *  Exected format: YYYYMMDD HH:MM:SS.UUUUUU
-     *  Index:          012345678901234567890123
+     *  Exected format: YYYYMMDD HH:MM:SS.MMMUUUNNN
+     *  Index:          012345678901234567890123456
      */
 
     /*
@@ -150,7 +140,13 @@ void Time::InitialiseFromTimestamp(char* buf)
      * In the case where we have garbage, atoi will return 0, which is
      * good enough to represent garbage data.
      */
-    TV().tv_usec =  atoi(buf + 18);
+
+    if (len > 24) {
+        ts.tv_nsec =  atoi(buf + 18);
+    } else {
+        // careful - old timestamps will have been created without the nanos...
+        ts.tv_nsec =  atoi(buf + 18) * 1000;
+    }
     buf[17] = 0;
     working.tm_sec  = atoi(buf+15);
 
@@ -181,7 +177,7 @@ void Time::InitialiseFromTimestamp(char* buf)
      * calculate timeval...
      * --------------------
      */   
-    TV().tv_sec = difftime(timegm(&working),get_epoch());
+    ts.tv_sec = difftime(timegm(&working),get_epoch());
     SetTM(working);
 }
 
@@ -218,7 +214,7 @@ void Time::InitialiseFromISOTimestamp(char* buf)
      * good enough to represent garbage data.
      */
     buf[26] = 0;
-    TV().tv_usec =  atoi(buf + 20);
+    ts.tv_nsec =  atoi(buf + 20) * 1000;
 
     buf[19] = 0;
     working.tm_sec  = atoi(buf+17);
@@ -250,7 +246,7 @@ void Time::InitialiseFromISOTimestamp(char* buf)
      * calculate timeval...
      * --------------------
      */
-    TV().tv_sec = difftime(timegm(&working),get_epoch());
+    ts.tv_sec = difftime(timegm(&working),get_epoch());
     SetTM(working);
 }
 
@@ -269,25 +265,26 @@ void Time::InitialiseBlank()
     //epoch.tm_yday: Not used by timegm
     SetTM(epoch);
 
-    TV().tv_sec = difftime(get_epoch(),get_epoch());
-    TV().tv_usec =  0;
+    ts.tv_sec = difftime(get_epoch(),get_epoch());
+    ts.tv_nsec =  0;
 }
 
 Time& Time::SetNow() {
-    gettimeofday(&TV(),NULL);
+    clock_gettime(CLOCK_REALTIME, &ts);
     data.ready = false;
     return *this;
 }
 
 void Time::MakeReady() const {
     if ( !data.ready) {
+        data.ready = true;
         SetTmFromTimeval();
     }
 }
 
 void Time::SetTmFromTimeval() const {
     tm buf;
-    gmtime_r(&TV().tv_sec,&buf);
+    gmtime_r(&ts.tv_sec,&buf);
     SetTM(buf);
 }
 
@@ -325,40 +322,36 @@ string Time::Timestamp() const {
     strtime << setw(1) << ":";
     strtime << setw(2) << setfill('0') << Second();
     strtime << setw(1) << ".";
-    strtime << setw(6) <<  setfill('0') << USec();
-    return strtime.str();
-}
-
-string Time::FileTimestamp() const {
-    MakeReady();
-    stringstream strtime;
-    strtime << Year() << "-" << Month() << "-" << MDay();
-    strtime << "_" << Hour() << ":" << Minute() << ":" << Second();
-    strtime << "-" << USec();
+    strtime << setw(9) <<  setfill('0') << NSec();
     return strtime.str();
 }
 
 int Time::DiffSecs(const Time& rhs) const {
-    int diff = (TV().tv_sec - rhs.TV().tv_sec);
-    if ( TV().tv_usec < rhs.TV().tv_usec) {
+    int diff = (ts.tv_sec - rhs.ts.tv_sec);
+    if ( ts.tv_nsec < rhs.ts.tv_nsec) {
         diff-=1;
     }
     return diff;
 }
 long Time::DiffUSecs(const Time& rhs) const {
-    long diff = (  static_cast<long>(TV().tv_sec) -
-                   static_cast<long>(rhs.TV().tv_sec)
+    long diff = (  static_cast<long>(ts.tv_sec) -
+                   static_cast<long>(rhs.ts.tv_sec)
                 )*1000000;
-    diff+=(TV().tv_usec - rhs.TV().tv_usec);
+    diff+=((ts.tv_nsec - rhs.ts.tv_nsec) / 1000);
     return diff;
 }
 
 long Time::EpochUSecs() const {
-    return TV().tv_usec + 1e6L* (long(TV().tv_sec));
+    return ts.tv_nsec / 1000 + 1e6L* (long(ts.tv_sec));
 }
 
+long Time::EpochNSecs() const {
+    return ts.tv_nsec + 1e9L* (long(ts.tv_sec));
+}
+
+
 int Time::EpochSecs() const {
-    return TV().tv_sec;
+    return ts.tv_sec;
 }
 
 void Time::SetTM(const tm &time) const {

@@ -7,6 +7,8 @@
 #include <util_time.h>
 #include <vector>
 
+using namespace nstimestamp;
+
 namespace {
     void report(const std::string& test,
                 const std::chrono::high_resolution_clock::time_point& start,
@@ -28,6 +30,46 @@ namespace {
     }
 
 namespace TimeBench {
+    void WriteTimestamp() {
+        const uint_fast32_t numEvents = 1e6;
+        BENCHMARK("Timestamp creation", {
+            std::string theTime;
+            for (uint_fast32_t i = 0; i < numEvents; ++i) {
+                theTime = Time().Timestamp();
+            }
+        }, numEvents);
+    }
+
+    void WriteISOTimestamp() {
+        const uint_fast32_t numEvents = 1e6;
+        BENCHMARK("ISO Timestamp creation", {
+            std::string theTime;
+            for (uint_fast32_t i = 0; i < numEvents; ++i) {
+                theTime = Time().ISO8601Timestamp();
+            }
+        }, numEvents);
+    }
+
+    void ReadTimestamp() {
+        const uint_fast32_t numEvents = 1e6;
+        BENCHMARK("Timestamp parsing", {
+            const std::string reftime = "20140403 10:11:02.294930000";
+            for (uint_fast32_t i = 0; i < numEvents; ++i) {
+                Time(reftime);
+            }
+        }, numEvents);
+    }
+
+    void ReadISOTimestamp() {
+        const uint_fast32_t numEvents = 1e6;
+        BENCHMARK("ISO Timestamp parsing", {
+            const std::string reftime = "2014-04-03T10:11:02.294930Z";
+            for (uint_fast32_t i = 0; i < numEvents; ++i) {
+                Time(reftime);
+            }
+        }, numEvents);
+    }
+
     void StackTime() {
         const uint_fast32_t numEvents = 1e6;
         BENCHMARK("Time - Stack temp", {
@@ -150,6 +192,14 @@ int main(int argc, char**argv) {
     std::cout << std::endl;
     TimeBench::StackTime();
     ChronoBench::StackTime();
+
+    std::cout << std::endl;
+    TimeBench::WriteTimestamp();
+    TimeBench::WriteISOTimestamp();
+
+    std::cout << std::endl;
+    TimeBench::ReadTimestamp();
+    TimeBench::ReadISOTimestamp();
 
     std::cout << std::endl;
     NakedTmBench::EventCapture();

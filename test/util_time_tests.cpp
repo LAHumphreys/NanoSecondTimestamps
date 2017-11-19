@@ -3,9 +3,11 @@
 #include <chrono>
 
 using namespace std;
+using namespace nstimestamp;
 
 namespace {
-    const string reftime = "20140403 10:11:02.294930";
+    const string reftime_legacy = "20140403 10:11:02.294930";
+    const string reftime = "20140403 10:11:02.294930000";
     const string reftime_iso8601 = "2014-04-03T10:11:02.294930Z";
 
     void AssertTimeMatches(const Time& timeToCheck) {
@@ -62,6 +64,19 @@ TEST(Timestamps,NowUSecs) {
     ASSERT_LE(now.EpochUSecs(), endEpochUSecs);
 }
 
+TEST(Timestamps,NowNSecs) {
+    auto start = std::chrono::system_clock::now();
+    Time now;
+    auto end = std::chrono::system_clock::now();
+    long startEpochNSecs = std::chrono::duration_cast<std::chrono::nanoseconds >(
+            start.time_since_epoch()).count();
+    long endEpochNSecs = std::chrono::duration_cast<std::chrono::nanoseconds>(
+            end.time_since_epoch()).count();
+
+    ASSERT_GE(now.EpochNSecs(), startEpochNSecs);
+    ASSERT_LE(now.EpochNSecs(), endEpochNSecs);
+}
+
 TEST(Timestamps, SetNow) {
     Time timestamp(reftime);
     AssertTimeMatches(timestamp);
@@ -77,6 +92,12 @@ TEST(Timestamps, SetNow) {
     ASSERT_LE(timestamp.EpochSecs(), endEpochSecs);
 }
 
+TEST(Timestamps,ReadFromLegacyTimestamp) {
+    Time timestamp(reftime_legacy);
+    AssertTimeMatches(timestamp);
+    Time timestamp_with_cache(reftime_legacy);
+    AssertTimeMatches(timestamp_with_cache);
+}
 
 TEST(Timestamps,ReadFromTimestamp) {
     Time timestamp(reftime);
