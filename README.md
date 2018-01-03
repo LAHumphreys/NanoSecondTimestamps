@@ -2,7 +2,7 @@
 Capture, print and parse nanosecond UTC Timestmaps.
 
 [![Build Status](https://travis-ci.org/Grauniad/NanoSecondTimestamps.svg?branch=master)](https://travis-ci.org/Grauniad/NanoSecondTimestamps)
-[![Coverage Status](https://coveralls.io/repos/github/Grauniad/NanoSecondTimestamps/badge.svg?branch=Travis)](https://coveralls.io/github/Grauniad/NanoSecondTimestamps?branch=Travis)
+[![Coverage Status](https://coveralls.io/repos/github/Grauniad/NanoSecondTimestamps/badge.svg?branch=master)](https://coveralls.io/github/Grauniad/NanoSecondTimestamps?branch=master)
 
 ## Overview
 The nstimestamp utility provides a simplified wrapper around the Linux
