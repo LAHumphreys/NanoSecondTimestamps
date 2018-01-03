@@ -27,7 +27,7 @@
 .idea
 
 # CMake Output (build directories)
-cmake-build-debug
+cmake-build-*
 build
 
 # Eclipse
