@@ -1,0 +1,38 @@
+sudo: required
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      
+    packages:
+      - cmake
+      - cmake-data
+      - g++-6
+      - libgtest-dev
+      - valgrind
+
+
+before_install:
+  - git clone --recursive https://github.com/Grauniad/CMakeUtils.git
+  - cd CMakeUtils
+  - ./travis/installGTest.sh
+  - cd ..
+  - mkdir Build
+  - cd Build
+  - cmake ..
+  - cd ..
+
+install:
+  - pip install --user cpp-coveralls
+  - export CXX="g++-6"
+  - export CC="gcc-6"
+  
+script: 
+  - g++-6 --version
+  - cd Build
+  - make
+  - make test
+  - ctest -T Memcheck
+  - cd ..
+  - ./CMakeUtils/travis/doCoverage.sh -e src/benchmark.cpp
