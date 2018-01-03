@@ -59,6 +59,7 @@ public:
     // Diffs: Time since rhs: (this - rhs)
     int  DiffSecs (const Time& rhs) const;
     long DiffUSecs (const Time& rhs) const;
+    long DiffNSecs (const Time& rhs) const;
 
     // micro-seconds since the epoch
     int EpochSecs() const;

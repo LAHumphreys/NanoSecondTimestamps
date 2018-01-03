@@ -341,6 +341,14 @@ long Time::DiffUSecs(const Time& rhs) const {
     return diff;
 }
 
+long Time::DiffNSecs(const Time& rhs) const {
+    long diff = (  static_cast<long>(ts.tv_sec) -
+                   static_cast<long>(rhs.ts.tv_sec)
+                )*1000000000;
+    diff+=(ts.tv_nsec - rhs.ts.tv_nsec);
+    return diff;
+}
+
 long Time::EpochUSecs() const {
     return ts.tv_nsec / 1000 + 1e6L* (long(ts.tv_sec));
 }

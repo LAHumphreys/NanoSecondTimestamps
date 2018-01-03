@@ -143,3 +143,12 @@ TEST(DiffUSeconds,USecondDiff) {
     long diffusecs = (1430737863L - 1396519862L)*1000000L + (294934L - 394930L);
     ASSERT_EQ(end.DiffUSecs(start), diffusecs);
 }
+
+TEST(DiffNSeconds,NSecondDiff) {
+    Time start ("20140403 10:11:02.394930000");
+    Time end ("20150504 11:11:03.294934123");
+
+    long diffusecs = (1430737863L - 1396519862L)*1000000L + (294934L - 394930L);
+    long diffnsecs = (diffusecs)*1000 + 123;
+    ASSERT_EQ(end.DiffNSecs(start), diffnsecs);
+}
