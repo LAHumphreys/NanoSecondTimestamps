@@ -7,14 +7,18 @@ else
     exit 1
 fi
 
-if [[ -e deps/CMakeUtils ]]; then
+if [[ "$1" == "" ]]; then
+    DEPS_ROOT="$PWD/deps"
+else
+    DEPS_ROOT="$1"
+fi
+if [[ -e $DEPS_ROOT/CMakeUtils ]]; then
     echo "Existing CMakeUtils directory, no need to clone"
 else
-    git clone https://github.com/Grauniad/CMakeUtils.git deps/CMakeUtils || exit 1
+    git clone https://github.com/Grauniad/CMakeUtils.git $DEPS_ROOT/CMakeUtils || exit 1
 fi
 
 declare -A depList
 depList[gtest]=https://github.com/google/googletest.git
 
-source deps/CMakeUtils/build_tools/buildDepsCommon.sh $@ || exit 1
-
+source $DEPS_ROOT/CMakeUtils/build_tools/buildDepsCommon.sh || exit 1
